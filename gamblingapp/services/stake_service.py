@@ -18,8 +18,8 @@ def place_bet():
 
     if not data:
         print("Not found")
-        return
-
+        return 
+    
     current, win_limit, loss_limit, bets, wins, losses = data
 
     if amount > current:

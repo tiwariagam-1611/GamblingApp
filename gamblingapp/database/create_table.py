@@ -18,8 +18,25 @@ def create_table():
     )
     """)
 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS preferences (
+        gambler_id INT,
+        min_bet DOUBLE,
+        max_bet DOUBLE
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS stake_transaction (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        gambler_id INT,
+        type VARCHAR(50),
+        amount DOUBLE,
+        balance_before DOUBLE,
+        balance_after DOUBLE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
     conn.commit()
     conn.close()
-
-if __name__ == "__main__":
-    create_table()
