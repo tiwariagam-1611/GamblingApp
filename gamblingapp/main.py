@@ -4,8 +4,10 @@ from services.betting_service import place_bet
 from services.session_service import *
 from services.stats_service import get_stats
 from database.create_table import create_table
+from services.win_loss_service import *
 
 create_table()
+calculator = WinLossCalculator()
 
 while True:
     print("\nMenu")
@@ -20,7 +22,7 @@ while True:
     print("9 Stake Report")
     print("10 Start Session")
     print("11 End Session")
-    print("12 Stats")
+    print("12 Win/Loss Stats")
     print("13 Exit")
 
     c = input()
@@ -36,5 +38,5 @@ while True:
     elif c == "9": stake_report()
     elif c == "10": start_session(int(input("ID: ")))
     elif c == "11": end_session(int(input("ID: ")))
-    elif c == "12": get_stats(int(input("ID: ")))         
+    elif c == "12": calculator.stats()        
     elif c == "13": break

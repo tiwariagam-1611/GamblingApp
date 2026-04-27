@@ -1,15 +1,10 @@
-import random
-from config.db import get_connection
-from services.stake_service import update_stake
-from models.transaction import TransactionType
-from models.strategy import get_strategy
+from services.win_loss_service import WinLossCalculator
+
+calculator = WinLossCalculator()
 
 def place_bet():
     gid = int(input("Enter ID: "))
-    amount = float(input("Enter bet amount: "))
-
-    print("1 Easy 2 Medium 3 Hard")
-    strategy = get_strategy(input("Choose strategy: "))
+    amount = float(input("Enter bet: "))
 
     conn = get_connection()
     cursor = conn.cursor()
@@ -21,23 +16,23 @@ def place_bet():
         print("Insufficient balance")
         return
 
-    before = current
+    probability = 0.5
 
-    if random.random() < strategy.probability:
-        outcome = "win"
-        win_amount = amount * strategy.multiplier
-        after = update_stake(gid, win_amount, TransactionType.BET_WIN)
-    else:
-        outcome = "loss"
-        after = update_stake(gid, -amount, TransactionType.BET_LOSS)
+    result = calculator.process(amount, probability, current)
+
+    after = update_stake(
+        gid,
+        result.winnings,
+        TransactionType.BET_WIN if result.outcome == "win" else TransactionType.BET_LOSS
+    )
 
     cursor.execute("""
     INSERT INTO bets
-    (gambler_id, amount, probability, outcome, strategy, stake_before, stake_after)
-    VALUES (%s,%s,%s,%s,%s,%s,%s)
-    """, (gid, amount, strategy.probability, outcome, strategy.name, before, after))
+    (gambler_id, amount, probability, outcome, stake_before, stake_after)
+    VALUES (%s,%s,%s,%s,%s,%s)
+    """, (gid, amount, probability, result.outcome, current, after))
 
     conn.commit()
     conn.close()
 
-    print("Result:", outcome)
+    result.display()
