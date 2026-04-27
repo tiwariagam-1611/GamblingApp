@@ -2,44 +2,20 @@ import random
 from config.db import get_connection
 from services.stake_service import update_stake
 from models.transaction import TransactionType
-
-
-def choose_strategy():
-    print("Choose Strategy")
-    print("1 Easy (High win, low reward)")
-    print("2 Medium (Balanced)")
-    print("3 Hard (Low win, high reward)")
-
-    choice = input("Enter choice: ")
-
-    if choice == "1":
-        return 0.7, 1
-    elif choice == "2":
-        return 0.5, 2
-    elif choice == "3":
-        return 0.3, 3
-    else:
-        print("Invalid choice, default Medium")
-        return 0.5, 2
-
+from models.strategy import get_strategy
 
 def place_bet():
     gid = int(input("Enter ID: "))
-    amount = float(input("Bet amount: "))
+    amount = float(input("Enter bet amount: "))
 
-    probability, multiplier = choose_strategy()
+    print("1 Easy 2 Medium 3 Hard")
+    strategy = get_strategy(input("Choose strategy: "))
 
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("SELECT current_stake FROM gambler WHERE id=%s", (gid,))
-    data = cursor.fetchone()
-
-    if not data:
-        print("Not found")
-        return
-
-    current = data[0]
+    current = cursor.fetchone()[0]
 
     if amount > current:
         print("Insufficient balance")
@@ -47,9 +23,9 @@ def place_bet():
 
     before = current
 
-    if random.random() < probability:
+    if random.random() < strategy.probability:
         outcome = "win"
-        win_amount = amount * multiplier
+        win_amount = amount * strategy.multiplier
         after = update_stake(gid, win_amount, TransactionType.BET_WIN)
     else:
         outcome = "loss"
@@ -57,9 +33,9 @@ def place_bet():
 
     cursor.execute("""
     INSERT INTO bets
-    (gambler_id, amount, probability, outcome, stake_before, stake_after)
-    VALUES (%s,%s,%s,%s,%s,%s)
-    """, (gid, amount, probability, outcome, before, after))
+    (gambler_id, amount, probability, outcome, strategy, stake_before, stake_after)
+    VALUES (%s,%s,%s,%s,%s,%s,%s)
+    """, (gid, amount, strategy.probability, outcome, strategy.name, before, after))
 
     conn.commit()
     conn.close()

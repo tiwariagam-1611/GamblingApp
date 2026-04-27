@@ -17,6 +17,19 @@ def create_table():
         losses INT DEFAULT 0
     )
     """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS bets (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        gambler_id INT NOT NULL,
+        amount DOUBLE NOT NULL,
+        probability DOUBLE NOT NULL,
+        outcome VARCHAR(10),
+        strategy VARCHAR(50),
+        stake_before DOUBLE,
+        stake_after DOUBLE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS preferences (
@@ -35,6 +48,18 @@ def create_table():
         balance_before DOUBLE,
         balance_after DOUBLE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS sessions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        gambler_id INT NOT NULL,
+        status VARCHAR(50),
+        start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        end_time TIMESTAMP NULL,
+        total_games INT DEFAULT 0,
+        final_stake DOUBLE,
+        end_reason VARCHAR(50)
     )
     """)
 

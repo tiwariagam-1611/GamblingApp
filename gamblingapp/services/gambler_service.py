@@ -30,62 +30,34 @@ def create_gambler():
     conn.commit()
     conn.close()
 
-    print("Gambler created")
+    print("Created")
 
 
 def view_gambler():
-    gid = int(input("Enter gambler ID: "))
-
+    gid = int(input("Enter ID: "))
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM gambler WHERE id=%s", (gid,))
-    row = cursor.fetchone()
-
-    conn.close()
-
-    if row:
-        print(row)
-    else:
-        print("Not found")
-
-
-def view_all_gamblers():
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM gambler")
-
-    for row in cursor.fetchall():
-        print(row)
+    print(cursor.fetchone())
 
     conn.close()
 
 
 def update_gambler():
-    gid = int(input("Enter gambler ID: "))
+    gid = int(input("Enter ID: "))
+    name = input("New name: ")
+    win_limit = float(input("New win limit: "))
+    loss_limit = float(input("New loss limit: "))
 
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM gambler WHERE id=%s", (gid,))
-    if not cursor.fetchone():
-        print("Not found")
-        conn.close()
-        return
-
-    name = input("Enter new name (leave blank to skip): ")
-    win_limit = input("Enter new win limit (blank to skip): ")
-    loss_limit = input("Enter new loss limit (blank to skip): ")
-
-    if name:
-        cursor.execute("UPDATE gambler SET name=%s WHERE id=%s", (name, gid))
-
-    if win_limit:
-        cursor.execute("UPDATE gambler SET win_limit=%s WHERE id=%s", (float(win_limit), gid))
-
-    if loss_limit:
-        cursor.execute("UPDATE gambler SET loss_limit=%s WHERE id=%s", (float(loss_limit), gid))
+    cursor.execute("""
+    UPDATE gambler
+    SET name=%s, win_limit=%s, loss_limit=%s
+    WHERE id=%s
+    """, (name, win_limit, loss_limit, gid))
 
     conn.commit()
     conn.close()
@@ -94,17 +66,16 @@ def update_gambler():
 
 
 def validate_gambler():
-    gid = int(input("Enter gambler ID: "))
+    gid = int(input("Enter ID: "))
 
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
-    SELECT current_stake, win_limit, loss_limit
-    FROM gambler WHERE id=%s
+    SELECT current_stake, win_limit, loss_limit FROM gambler WHERE id=%s
     """, (gid,))
-
     data = cursor.fetchone()
+
     conn.close()
 
     if not data:
@@ -116,30 +87,21 @@ def validate_gambler():
     if current <= 0:
         print("Not eligible")
     elif current >= win_limit:
-        print("Reached win condition")
+        print("Win reached")
     elif current <= loss_limit:
-        print("Reached loss condition")
+        print("Loss reached")
     else:
-        print("Eligible to play")
+        print("Eligible")
 
 
 def reset_gambler():
-    gid = int(input("Enter gambler ID: "))
+    gid = int(input("Enter ID: "))
 
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""
-    SELECT initial_stake FROM gambler WHERE id=%s
-    """, (gid,))
-    data = cursor.fetchone()
-
-    if not data:
-        print("Not found")
-        conn.close()
-        return
-
-    initial = data[0]
+    cursor.execute("SELECT initial_stake FROM gambler WHERE id=%s", (gid,))
+    initial = cursor.fetchone()[0]
 
     cursor.execute("""
     UPDATE gambler
