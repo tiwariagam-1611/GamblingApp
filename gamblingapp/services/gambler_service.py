@@ -1,14 +1,22 @@
 from config.db import get_connection
 from models.transaction import TransactionType
+from services.safe_input import get_positive_stake, get_float
+from services.validator_service import InputValidator
+
+validator = InputValidator()
+
 
 def create_gambler():
     name = input("Enter name: ")
-    stake = float(input("Enter stake: "))
-    win_limit = float(input("Enter win limit: "))
-    loss_limit = float(input("Enter loss limit: "))
 
-    if stake <= 0 or win_limit <= stake or loss_limit >= stake:
-        print("Invalid input")
+    stake = get_positive_stake("Enter stake: ")
+    win_limit = get_float("Enter win limit: ")
+    loss_limit = get_float("Enter loss limit: ")
+
+    try:
+        validator.validate_limits(stake, win_limit, loss_limit)
+    except Exception as e:
+        print("Error:", e)
         return
 
     conn = get_connection()
@@ -30,25 +38,32 @@ def create_gambler():
     conn.commit()
     conn.close()
 
-    print("Created")
+    print("Gambler created")
 
 
 def view_gambler():
     gid = int(input("Enter ID: "))
+
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM gambler WHERE id=%s", (gid,))
-    print(cursor.fetchone())
+    row = cursor.fetchone()
 
     conn.close()
+
+    if row:
+        print(row)
+    else:
+        print("Not found")
 
 
 def update_gambler():
     gid = int(input("Enter ID: "))
+
     name = input("New name: ")
-    win_limit = float(input("New win limit: "))
-    loss_limit = float(input("New loss limit: "))
+    win_limit = get_float("New win limit: ")
+    loss_limit = get_float("New loss limit: ")
 
     conn = get_connection()
     cursor = conn.cursor()
@@ -87,9 +102,9 @@ def validate_gambler():
     if current <= 0:
         print("Not eligible")
     elif current >= win_limit:
-        print("Win reached")
+        print("Win condition reached")
     elif current <= loss_limit:
-        print("Loss reached")
+        print("Loss condition reached")
     else:
         print("Eligible")
 
@@ -101,7 +116,13 @@ def reset_gambler():
     cursor = conn.cursor()
 
     cursor.execute("SELECT initial_stake FROM gambler WHERE id=%s", (gid,))
-    initial = cursor.fetchone()[0]
+    data = cursor.fetchone()
+
+    if not data:
+        print("Not found")
+        return
+
+    initial = data[0]
 
     cursor.execute("""
     UPDATE gambler
